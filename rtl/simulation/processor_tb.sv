@@ -122,7 +122,7 @@ initial begin
     rst=1;
     @(posedge clk);
     rst=0;
-    for(int i=0;i<60000;i++) begin
+    for(int i=0;i<50000;i++) begin
         @(posedge clk);    
     end
     $stop;

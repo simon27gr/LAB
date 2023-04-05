@@ -37,18 +37,22 @@ module processor(
 	output logic [31:0] id_ex_NPC,
 	output logic [31:0] id_ex_IR,
 	output logic   		id_ex_valid_inst,
-
+	//output logic [4:0]  id_ex_dest_reg_idx,				//////////////	NEW		////////////////
 
 	// Outputs from EX/MEM Pipeline Register
 	output logic [31:0] ex_mem_NPC,
 	output logic [31:0] ex_mem_IR,
 	output logic   		ex_mem_valid_inst,
-
+	//output logic [4:0]	ex_mem_dest_reg_idx,			//////////////	NEW		////////////////
 
 	// Outputs from MEM/WB Pipeline Register
 	output logic [31:0] mem_wb_NPC,
 	output logic [31:0] mem_wb_IR,
-	output logic   		mem_wb_valid_inst);
+	output logic   		mem_wb_valid_inst
+
+	//input logic 		stall_due_to_RAW /////////////		NEW			///////////////
+	//input logic			stall				///////////		NEW			//////////////
+	);			  
 
 // Pipeline register enables
 logic 			if_id_enable, id_ex_enable, ex_mem_enable, mem_wb_enable;
@@ -71,6 +75,8 @@ logic         	id_valid_inst_out;
 logic 			id_uncond_branch;
 logic 			id_cond_branch;
 logic [31:0]    id_pc_add_opa;
+logic [4:0] 	if_id_rs1; ///////new
+logic [4:0] 	if_id_rs2;   ///////new
 
 // Outputs from ID/EX Pipeline Register
 logic 			id_ex_reg_wr;
@@ -154,8 +160,26 @@ if_stage if_stage_0 (
 .if_PC_out			(if_PC_out), 
 .if_IR_out			(if_IR_out),
 .proc2Imem_addr		(pc_addr),
-.if_valid_inst_out  (if_valid_inst_out)
+.if_valid_inst_out  (if_valid_inst_out),
+.stall_due_to_RAW   (stall_due_to_RAW)
 );
+
+/////////// 		NEW			/////////////////////	
+
+// Hazard Detection
+
+
+hazard_detection hazard_detection_0(.id_ex_rd 			(id_ex_dest_reg_idx),
+									.ex_mem_rd			(ex_mem_dest_reg_idx),
+									.mem_wb_rd 			(mem_wb_dest_reg_idx),
+									.if_id_rs1	 		(if_id_rs1),
+									.if_id_rs2  		(if_id_rs2),
+									.stall_due_to_RAW  	(stall_due_to_RAW)
+									);
+								
+
+/////////// 		END NEW			/////////////////////
+
 
 //////////////////////////////////////////////////
 //                                              //
@@ -165,7 +189,7 @@ if_stage if_stage_0 (
 assign if_id_enable = 1;
 
 always_ff @(posedge clk or posedge rst) begin
-	if(rst) begin
+	if(rst||ex_mem_take_branch) begin       /////////// 		NEW			/////////////////////		
 		if_id_PC         <=  0;
 		if_id_IR         <=  `NOOP_INST;
 		if_id_NPC        <=  0;
@@ -178,6 +202,7 @@ always_ff @(posedge clk or posedge rst) begin
         if_id_valid_inst <= if_valid_inst_out;
     end 
 end 
+//assign if_valid_inst_out = ~stall_due_to_RAW;   /////////// 		NEW			/////////////////////	
 
    
 //////////////////////////////////////////////////
@@ -196,6 +221,8 @@ id_stage id_stage_0 (
 .mem_wb_reg_wr			(mem_wb_reg_wr), 
 .wb_reg_wr_data_out     (wb_reg_wr_data_out),  	
 .if_id_valid_inst       (if_id_valid_inst),
+.stall_due_to_RAW 		(stall_due_to_RAW),				///////////////			NEW 		//////////////////////
+//.stall					(stall),						///////////////			NEW 		//////////////////////
 
 // Outputs
 .id_reg_wr_out          (id_reg_wr_out),
@@ -213,7 +240,9 @@ id_stage id_stage_0 (
 .cond_branch			(id_cond_branch),
 .uncond_branch			(id_uncond_branch),
 .id_illegal_out			(id_illegal_out),
-.id_valid_inst_out		(id_valid_inst_out)
+.id_valid_inst_out		(id_valid_inst_out),
+.ra_idx	 				(if_id_rs1), 				///////////////			NEW 		//////////////////////
+.rb_idx  				(if_id_rs2)			        ///////////////			NEW 		//////////////////////
 );
 
 //////////////////////////////////////////////////
@@ -224,7 +253,7 @@ id_stage id_stage_0 (
 assign id_ex_enable =1; // disabled when HzDU initiates a stall
 // synopsys sync_set_rst "rst"
 always_ff @(posedge clk or posedge rst) begin
-	if (rst) begin //sys_rst
+	if (rst || stall_due_to_RAW || ex_mem_take_branch) begin //sys_rst 				//////////	 NEW	 /////////
 		//Control
 		id_ex_funct3		<=  0;
 		id_ex_opa_select    <=  `ALU_OPA_IS_REGA;
@@ -249,7 +278,7 @@ always_ff @(posedge clk or posedge rst) begin
 		
 		//Debug
 		id_ex_NPC           <=  0;
-    end else begin 
+	end else begin
 		if (id_ex_enable) begin
 			id_ex_funct3		<=  id_funct3_out;
 			id_ex_opa_select    <=  id_opa_select_out;
@@ -275,7 +304,7 @@ always_ff @(posedge clk or posedge rst) begin
 		end // if
     end // else: !if(rst)
 end // always
-
+//assign id_ex_valid_inst = ~stall_due_to_RAW;   /////////// 		NEW			/////////////////////	
 //////////////////////////////////////////////////
 //                                              //
 //                  EX-Stage                    //
@@ -297,6 +326,7 @@ ex_stage ex_stage_0 (
 .id_ex_funct3			(id_ex_funct3),
 .uncond_branch			(id_ex_uncond_branch),
 .cond_branch			(id_ex_cond_branch),
+//.stall_due_to_br		(stall_due_to_branch), ////NEW
 // Outputs
 .ex_take_branch_out		(ex_take_branch_out),
 .ex_target_PC_out		(ex_target_PC_out),
@@ -329,7 +359,7 @@ always_ff @(posedge clk or posedge rst) begin
 		//Debug
 		ex_mem_NPC			<=  0;
 	end else begin
-		if(ex_mem_enable) begin
+		if(ex_mem_enable) begin 
 			ex_mem_funct3		<=  id_ex_funct3;
 			ex_mem_rd_mem       <=  id_ex_rd_mem;
 			ex_mem_wr_mem       <=  id_ex_wr_mem;
@@ -344,11 +374,11 @@ always_ff @(posedge clk or posedge rst) begin
 			ex_mem_take_branch  <=	ex_take_branch_out;
 			ex_mem_target_PC	<=  ex_target_PC_out;			
 			ex_mem_NPC			<=  id_ex_NPC;
-		end // if
+		end // if		
 	end // else: !if(rst)
 end // always
 
-   
+//assign ex_mem_valid_inst = ~stall_due_to_RAW;   /////////// 		NEW			/////////////////////	  
 //////////////////////////////////////////////////
 //                                              //
 //                 MEM-Stage                    //
@@ -414,6 +444,7 @@ always_ff @(posedge clk or posedge rst) begin
 		end // if
 	end // else: !if(rst)
 end // always
+//assign mem_wb_valid_inst = ~stall_due_to_RAW;   /////////// 		NEW			/////////////////////	
 
 //////////////////////////////////////////////////
 //                                              //

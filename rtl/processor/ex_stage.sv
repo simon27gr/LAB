@@ -68,13 +68,59 @@ alu alu_0 (// Inputs
 
 assign ex_target_PC_out = pc_add_opa + id_ex_imm;
 
-assign ex_take_branch_out = (uncond_branch | (cond_branch & brcond_result)) & id_ex_valid_inst;
+assign ex_take_branch_out = (uncond_branch | (cond_branch & brcond_result)) & id_ex_valid_inst;  ///// calculates whether or not a branch should be taken
+//
+
 //
 
 assign ex_alu_result_out=alu_result;
 
 
 endmodule // module ex_stage
+
+/////////// 		NEW			/////////////////////	
+
+// module stall_due_to_branch(
+// input logic ex_take_branch_out,
+// input logic stall_due_to_RAW,
+
+// output logic ex_discard_next_inst,
+// output logic stall,
+// output logic stall_due_to_br
+
+// );
+
+
+
+// ex_stage ex_stage_0(.ex_take_branch_out  (ex_take_branch_out));
+
+// hazard_detection hazard_detection_0 (.stall_due_to_RAW (stall_due_to_RAW));
+
+// //stall the branch if needed
+// always_comb begin : stall_for_branch
+//     if (ex_take_branch_out) begin
+//         stall_due_to_br = 1;
+//         ex_discard_next_inst = 1;
+//     end else begin
+//         stall_due_to_br = 0;
+//         ex_discard_next_inst = 0;
+//     end
+// end
+
+// assign stall = stall_due_to_br | stall_due_to_RAW;
+
+
+//endmodule
+
+
+
+/////////// 		END NEW			/////////////////////	
+
+
+
+
+
+
 
 //
 // The ALU

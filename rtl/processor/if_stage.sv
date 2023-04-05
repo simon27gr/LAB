@@ -8,7 +8,8 @@ module if_stage  (input logic 	      clk,             // system clk
 			      input logic   	  ex_take_branch_out,// taken-branch signal
 				  input logic [31:0]  ex_target_PC_out,  // target pc: use if take_branch is TRUE
 				  input logic [31:0]  Imem2proc_data,    // Data coming back from instruction-memory
-					
+				  input logic 		  stall_due_to_RAW,			/////////////		NEW			///////////////	
+
 				  output logic [31:0] proc2Imem_addr,    // Address sent to Instruction memory
 				  output logic [31:0] if_PC_out,         // current PC
 				  output logic [31:0] if_NPC_out,        // PC + 4
@@ -20,6 +21,13 @@ logic [31:0] PC_reg; 				   // PC we are currently fetching
 logic [31:0] PC_plus_4;
 logic [31:0] next_PC;
 logic 	PC_enable;
+
+/////////// 		NEW			/////////////////////	
+
+//hazard_detection hazard_detection_0 (.stall_due_to_RAW (stall_due_to_RAW));
+
+/////////// 		END NEW			/////////////////////
+
 
 assign proc2Imem_addr ={PC_reg[31:2], 2'b0};
 
@@ -43,7 +51,7 @@ assign if_NPC_out = PC_plus_4;
 always_ff @(posedge clk) begin
 	if(rst)
 		PC_reg <= 0;       // initial PC value is 0
-	else if(PC_enable)
+	else if(PC_enable && !stall_due_to_RAW)					//////////////		NEW			/////////////////
 		PC_reg <= next_PC; // transition to next PC
 end 
 

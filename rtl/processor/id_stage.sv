@@ -167,6 +167,8 @@ input logic [4:0]	mem_wb_dest_reg_idx, 	//index of rd
 input logic [31:0] 	wb_reg_wr_data_out, 	// Reg write data from WB Stage
 input logic         if_id_valid_inst,
 
+input logic 		stall_due_to_RAW,					/////////// 		NEW			/////////////////////
+
 output logic [31:0] id_ra_value_out,    	// reg A value
 output logic [31:0] id_rb_value_out,    	// reg B value
 output logic [31:0]	id_immediate_out,		// sign-extended 32-bit immediate
@@ -184,15 +186,17 @@ output logic 	    id_wr_mem_out,          // does inst write memory?
 output logic 		cond_branch,
 output logic        uncond_branch,
 output logic       	id_illegal_out,
-output logic       	id_valid_inst_out	  	// is inst a valid instruction to be counted for CPI calculations?
+output logic       	id_valid_inst_out,	  	// is inst a valid instruction to be counted for CPI calculations?
+output logic[4:0] ra_idx, 				//////////////	NEW		////////////////
+output logic[4:0] rb_idx 				//////////////	NEW		////////////////
 );
    
 logic dest_reg_select;
 logic [31:0] rb_val;
 
 //instruction fields read from IF/ID pipeline register
-logic[4:0] ra_idx; 
-logic[4:0] rb_idx; 
+//logic[4:0] ra_idx; 					//////////////	NEW		////////////////
+//logic[4:0] rb_idx; 					//////////////	NEW		////////////////
 logic[4:0] rc_idx; 
 
 assign ra_idx=if_id_IR[19:15];	// inst operand A register index
@@ -228,6 +232,12 @@ inst_decoder inst_decoder_0(.inst	        (if_id_IR),
 							.uncond_branch	(uncond_branch),
 							.illegal		(id_illegal_out),
 							.valid_inst		(id_valid_inst_out));
+
+/////////// 		NEW			/////////////////////		
+					
+//hazard_detection hazard_detection_0 (.stall_due_to_RAW (stall_due_to_RAW));
+
+/////////// 		END NEW			/////////////////////
 
 always_comb begin : write_to_rd
 	case(if_id_IR[6:0])
@@ -287,3 +297,40 @@ assign pc_add_opa =(if_id_IR[6:0] == `I_JAL_TYPE)? id_ra_value_out:if_id_PC;
 assign id_funct3_out = if_id_IR[14:12];
 
 endmodule // module id_stage
+
+
+/////////// 		NEW			/////////////////////	
+
+// Hazard Detection
+
+module hazard_detection(
+input logic [4:0] if_id_rs1,
+input logic [4:0] if_id_rs2,
+input logic [4:0]  id_ex_rd,
+input logic [4:0]  ex_mem_rd,
+input logic [4:0]  mem_wb_rd,
+
+output logic stall_due_to_RAW
+
+);
+
+logic hz_dt_rs1;
+logic hz_dt_rs2;
+
+/* processor processor_0(.id_ex_dest_reg_idx  (id_ex_rd),
+					  .ex_mem_dest_reg_idx (ex_mem_rd));
+
+
+id_stage id_stage_0(.ra_idx	 			 (if_id_rs1),
+					.rb_idx  			 (if_id_rs2),
+					.mem_wb_dest_reg_idx (mem_wb_rd)); */
+
+
+assign hz_dt_rs1 = (if_id_rs1 & ((if_id_rs1 == id_ex_rd) | (if_id_rs1 == ex_mem_rd) | (if_id_rs1) == (mem_wb_rd)));
+assign hz_dt_rs2 = (if_id_rs2 & ((if_id_rs2 == id_ex_rd) | (if_id_rs2 == ex_mem_rd) | (if_id_rs2) == (mem_wb_rd)));
+assign stall_due_to_RAW = (hz_dt_rs1 | hz_dt_rs2);
+
+
+endmodule
+
+/////////// 		END NEW			/////////////////////
