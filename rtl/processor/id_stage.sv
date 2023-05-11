@@ -301,7 +301,7 @@ endmodule // module id_stage
 
 /////////// 		NEW			/////////////////////	
 
-// Hazard Detection
+/* // Hazard Detection
 
 module hazard_detection(
 input logic [4:0] if_id_rs1,
@@ -317,20 +317,116 @@ output logic stall_due_to_RAW
 logic hz_dt_rs1;
 logic hz_dt_rs2;
 
-/* processor processor_0(.id_ex_dest_reg_idx  (id_ex_rd),
-					  .ex_mem_dest_reg_idx (ex_mem_rd));
+
+assign hz_dt_rs1 = (if_id_rs1!=0 && ((if_id_rs1 == id_ex_rd) || (if_id_rs1 == ex_mem_rd) || (if_id_rs1) == (mem_wb_rd)));
+assign hz_dt_rs2 = (if_id_rs2!=0 && ((if_id_rs2 == id_ex_rd) || (if_id_rs2 == ex_mem_rd) || (if_id_rs2) == (mem_wb_rd)));
+assign stall_due_to_RAW = (hz_dt_rs1 || hz_dt_rs2);
 
 
-id_stage id_stage_0(.ra_idx	 			 (if_id_rs1),
-					.rb_idx  			 (if_id_rs2),
-					.mem_wb_dest_reg_idx (mem_wb_rd)); */
+endmodule */
+
+/////////// 		END NEW			/////////////////////
 
 
-assign hz_dt_rs1 = (if_id_rs1 & ((if_id_rs1 == id_ex_rd) | (if_id_rs1 == ex_mem_rd) | (if_id_rs1) == (mem_wb_rd)));
-assign hz_dt_rs2 = (if_id_rs2 & ((if_id_rs2 == id_ex_rd) | (if_id_rs2 == ex_mem_rd) | (if_id_rs2) == (mem_wb_rd)));
-assign stall_due_to_RAW = (hz_dt_rs1 | hz_dt_rs2);
+/////////// 		NEW			/////////////////////
 
+module forwarding_to_id(
+input logic [4:0] if_id_rs1,
+input logic [4:0] if_id_rs2,
+input logic [4:0] id_ex_rd,
+input logic [4:0] ex_mem_rd,
+input logic [4:0] mem_wb_rd,
+input logic [31:0] instr, ////NEW
+input logic [31:0] result_from_alu, //apo alu
+input logic [31:0] result_from_mem, //apo mem
+input logic [31:0] result_from_wb, //apo wb
+
+/* output logic[31:0] from_ex_to_id_rs1, //rs1
+output logic[31:0] from_mem_to_id_rs1,
+output logic[31:0] from_wb_to_id_rs1,
+
+output logic[31:0]	from_ex_to_id_rs2,//rs2
+output logic[31:0]	from_mem_to_id_rs2,
+output logic[31:0]	from_wb_to_id_rs2, */
+output logic[31:0]	result_rs1,
+output logic[31:0]	result_rs2,
+output logic 		fwd_rs1,
+output logic 		fwd_rs2,   
+output logic		stall_due_to_next_RAW
+);
+
+logic hz1, hz2;
+
+
+
+/* logic[31:0] from_ex_to_id_rs1; //rs1
+logic[31:0] from_mem_to_id_rs1;
+logic[31:0] from_wb_to_id_rs1;
+
+logic[31:0] from_ex_to_id_rs2; //rs2
+logic[31:0] from_mem_to_id_rs2;
+logic[31:0] from_wb_to_id_rs2; */
+
+always_comb begin
+    //rs1
+
+	if (if_id_rs1!=0 && (if_id_rs1 == id_ex_rd) && instr[6:0] == `I_LD_TYPE) begin
+		hz1 = 1;
+		fwd_rs1=0;
+	end
+	else begin 
+		if (if_id_rs1!=0 && (if_id_rs1 == id_ex_rd))begin
+			result_rs1 = result_from_alu;
+			fwd_rs1=1;
+		end
+
+		else if (if_id_rs1!=0 && (if_id_rs1 == ex_mem_rd))begin
+			result_rs1 = result_from_mem;
+			fwd_rs1=1;
+		end
+
+		else if(if_id_rs1!=0 && (if_id_rs1 == mem_wb_rd))begin
+			result_rs1 = result_from_wb;
+			fwd_rs1=1;
+		end
+		else
+        	result_rs1 = 0; // Set default value if no forwarding
+			fwd_rs1=0;
+		hz1 = 0;
+	end 
+
+	//rs2
+	if (if_id_rs2!=0 && (if_id_rs2 == id_ex_rd) && instr[6:0] == `I_LD_TYPE) begin
+		hz2 = 1;
+		fwd_rs2=0;
+	end
+	else begin 
+		if (if_id_rs2!=0 && (if_id_rs2 == id_ex_rd))begin
+			result_rs2 = result_from_alu;
+			fwd_rs2=1;
+		end
+
+		else if (if_id_rs2!=0 && (if_id_rs2 == ex_mem_rd))begin
+			result_rs2 = result_from_mem;
+			fwd_rs2=1;
+		end
+
+		else if(if_id_rs2!=0 && (if_id_rs2 == mem_wb_rd))begin
+			result_rs2 = result_from_wb;
+			fwd_rs2=1;
+		end
+		else
+        	result_rs2 = 0; // Set default value if no forwarding
+			fwd_rs2=0;
+		hz2 = 0;
+	end 
+
+end
+/* assign result_rs1 = (from_ex_to_id_rs1||from_mem_to_id_rs1||from_wb_to_id_rs1);
+assign result_rs2 = (from_ex_to_id_rs2||from_mem_to_id_rs2||from_wb_to_id_rs2); */
+assign stall_due_to_next_RAW = hz1 | hz2;
+
+//stall check
 
 endmodule
 
-/////////// 		END NEW			/////////////////////

@@ -75,14 +75,18 @@ logic         	id_valid_inst_out;
 logic 			id_uncond_branch;
 logic 			id_cond_branch;
 logic [31:0]    id_pc_add_opa;
-logic [4:0] 	if_id_rs1; ///////new
+logic [4:0] 	if_id_rs1; 	///////new
 logic [4:0] 	if_id_rs2;   ///////new
+logic 			fwd_rs1;	///////new
+logic 			fwd_rs2;	///////new
 
 // Outputs from ID/EX Pipeline Register
 logic 			id_ex_reg_wr;
 logic [2:0]		id_ex_funct3;
 logic [31:0]   	id_ex_rega;
 logic [31:0]   	id_ex_regb;
+logic [31:0]	id_ex_rega_fwd;///////new
+logic [31:0]	id_ex_regb_fwd;///////new
 logic [31:0] 	id_ex_imm;
 logic [1:0]		id_ex_opa_select;
 logic [1:0]		id_ex_opb_select;
@@ -169,15 +173,37 @@ if_stage if_stage_0 (
 // Hazard Detection
 
 
-hazard_detection hazard_detection_0(.id_ex_rd 			(id_ex_dest_reg_idx),
+/* hazard_detection hazard_detection_0(.id_ex_rd 			(id_ex_dest_reg_idx),
 									.ex_mem_rd			(ex_mem_dest_reg_idx),
 									.mem_wb_rd 			(mem_wb_dest_reg_idx),
 									.if_id_rs1	 		(if_id_rs1),
 									.if_id_rs2  		(if_id_rs2),
 									.stall_due_to_RAW  	(stall_due_to_RAW)
-									);
+									); */
 								
+forwarding_to_id forwarding_to_id_0(
+	//inputs
+	.if_id_rs1 			(if_id_rs1),
+	.if_id_rs2 			(if_id_rs2),
+	.id_ex_rd  			(id_ex_dest_reg_idx),
+	.ex_mem_rd 			(ex_mem_dest_reg_idx),
+	.mem_wb_rd 			(mem_wb_dest_reg_idx),
+	.result_from_alu	(ex_alu_result_out),
+	.result_from_mem	(mem_result_out),
+	.result_from_wb		(wb_reg_wr_data_out),
+	.instr				(instruction),
+	//outputs
+	//rs1
+	.result_rs1  		(id_ex_rega_fwd),
+	.fwd_rs1			(fwd_rs1),
 
+	//rs2
+	.result_rs2  		(id_ex_regb_fwd),
+	.fwd_rs2			(fwd_rs2),
+
+	.stall_due_to_next_RAW (stall_due_to_RAW)
+
+);
 /////////// 		END NEW			/////////////////////
 
 
@@ -186,7 +212,7 @@ hazard_detection hazard_detection_0(.id_ex_rd 			(id_ex_dest_reg_idx),
 //            IF/ID Pipeline Register           //
 //                                              //
 //////////////////////////////////////////////////
-assign if_id_enable = 1;
+assign if_id_enable = !stall_due_to_RAW;		 /////////// 		NEW			/////////////////////		
 
 always_ff @(posedge clk or posedge rst) begin
 	if(rst||ex_mem_take_branch) begin       /////////// 		NEW			/////////////////////		
@@ -253,7 +279,8 @@ id_stage id_stage_0 (
 assign id_ex_enable =1; // disabled when HzDU initiates a stall
 // synopsys sync_set_rst "rst"
 always_ff @(posedge clk or posedge rst) begin
-	if (rst || stall_due_to_RAW || ex_mem_take_branch) begin //sys_rst 				//////////	 NEW	 /////////
+// 	if (rst || stall_due_to_RAW || ex_mem_take_branch) begin //sys_rst 		
+	if (rst) begin //sys_rst 				//////////	 NEW	 /////////
 		//Control
 		id_ex_funct3		<=  0;
 		id_ex_opa_select    <=  `ALU_OPA_IS_REGA;
@@ -292,8 +319,16 @@ always_ff @(posedge clk or posedge rst) begin
 			
 			id_ex_PC            <=  if_id_PC;
 			id_ex_IR            <=  if_id_IR;
-			id_ex_rega          <=  id_rega_out;
-			id_ex_regb          <=  id_regb_out;
+
+			if(fwd_rs1)
+				id_ex_rega      <=  id_ex_rega_fwd;
+			else
+				id_ex_rega      <=  id_rega_out;
+			if(fwd_rs2)
+				id_ex_regb      <=  id_ex_regb_fwd;
+			else
+				id_ex_regb      <=  id_regb_out;
+
 			id_ex_imm			<=  id_immediate_out;
 			id_ex_dest_reg_idx  <=  id_dest_reg_idx_out;
 			
@@ -341,7 +376,7 @@ ex_stage ex_stage_0 (
 assign ex_mem_enable = 1; // always enabled
 // synopsys sync_set_rst "rst"
 always_ff @(posedge clk or posedge rst) begin
-	if (rst) begin
+	if (rst || ex_mem_take_branch) begin
 		//Control
 		ex_mem_funct3		<=  0;
 		ex_mem_rd_mem       <=  0;

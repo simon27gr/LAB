@@ -4,22 +4,24 @@ lab.elf:     file format elf32-littleriscv
 
 Disassembly of section .text:
 
-00000000 <_start>:
-   0:	00008537          	lui	a0,0x8
-   4:	00050113          	mv	sp,a0
-   8:	008000ef          	jal	ra,10 <fact>
+00000000 <fact>:
+   0:	00000113          	li	sp,0
+   4:	00e00513          	li	a0,14
+   8:	00d00593          	li	a1,13
+   c:	00c00613          	li	a2,12
+  10:	04500093          	li	ra,69
+  14:	00a00893          	li	a7,10
+  18:	01b00913          	li	s2,27
+  1c:	04500a93          	li	s5,69
+  20:	04500293          	li	t0,69
+  24:	00112223          	sw	ra,4(sp)
+  28:	00c58533          	add	a0,a1,a2
+  2c:	411507b3          	sub	a5,a0,a7
+  30:	00412403          	lw	s0,4(sp)
+  34:	03240833          	mul	a6,s0,s2
+  38:	015558b3          	srl	a7,a0,s5
 
-0000000c <hang>:
-   c:	0000006f          	j	c <hang>
-
-00000010 <fact>:
-  10:	00000533          	add	a0,zero,zero
-  14:	00c00613          	li	a2,12
-  18:	00d00693          	li	a3,13
-  1c:	00e00713          	li	a4,14
-  20:	00d60533          	add	a0,a2,a3
-  24:	02e507b3          	mul	a5,a0,a4
-
-00000028 <done>:
-  28:	00008067          	ret
+0000003c <done>:
+  3c:	00008067          	ret
+  40:	0000                	unimp
 	...

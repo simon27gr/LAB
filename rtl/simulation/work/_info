@@ -7,10 +7,10 @@ z2
 !i10e 25
 !i10f 100
 cModel Technology
-Z0 d//wsl.localhost/Ubuntu/home/simon27/lab1/CompArchCourseDUTH/rtl/simulation
+Z0 d//wsl$$/Ubuntu/home/simon27/lab1/CompArchCourseDUTH/rtl/simulation
 valu
 Z1 DXx6 sv_std 3 std 0 22 AD7iAPLo6nTIKk<N0eo=D3
-Z2 !s110 1680731770
+Z2 !s110 1683749869
 !i10b 1
 !s100 zzigF^Eg`=eAMK2l7n3dV0
 IjJLVa:b`=_W0HHZE[kOeQ3
@@ -18,7 +18,7 @@ Z3 VDg1SIo80bB@j0V0VzS_@n1
 Z4 !s105 ex_stage_sv_unit
 S1
 R0
-Z5 w1680727536
+Z5 w1683668819
 Z6 8../processor/ex_stage.sv
 Z7 F../processor/ex_stage.sv
 L0 134
@@ -26,7 +26,7 @@ Z8 OV;L;10.5b;63
 r1
 !s85 0
 31
-Z9 !s108 1680731770.000000
+Z9 !s108 1683749869.000000
 Z10 !s107 processor_tb.sv|memory.sv|../processor/processor.sv|../processor/wb_stage.sv|../processor/mem_stage.sv|../processor/ex_stage.sv|../processor/id_stage.sv|../processor/regfile.sv|../processor/if_stage.sv|../sys_defs.vh|
 Z11 !s90 -reportprogress|300|-f|files_rtl.f|
 !i113 1
@@ -54,20 +54,20 @@ R10
 R11
 !i113 1
 R12
-vhazard_detection
+vforwarding_to_id
 R1
 R2
 !i10b 1
-!s100 9Nzm>mo:ZLn1am@Bn`DV<3
-IB<>oO^H:[a=3OWhCjbG5`2
+!s100 _n^Bnnc_E2@i^fIzcH?mA1
+I0VlJU4>YobUm4n`c]IiaP3
 R3
 Z13 !s105 id_stage_sv_unit
 S1
 R0
-Z14 w1680730968
+Z14 w1683749123
 Z15 8../processor/id_stage.sv
 Z16 F../processor/id_stage.sv
-L0 306
+L0 333
 R8
 r1
 !s85 0
@@ -104,13 +104,13 @@ vif_stage
 R1
 R2
 !i10b 1
-!s100 :ZnVLPW`g8emP83]2XG@U1
-I?<K3W4RF[`Uo0SW3aZ?3B1
+!s100 J5?[5_F7<6ngoZMd8b2RJ3
+I9KmgF3`=<_j<C>a8Jh=:23
 R3
 !s105 if_stage_sv_unit
 S1
 R0
-w1680728630
+w1683668860
 8../processor/if_stage.sv
 F../processor/if_stage.sv
 L0 5
@@ -179,7 +179,7 @@ R3
 !s105 mem_stage_sv_unit
 S1
 R0
-R17
+w1683668881
 8../processor/mem_stage.sv
 F../processor/mem_stage.sv
 L0 5
@@ -196,13 +196,13 @@ vprocessor
 R1
 R2
 !i10b 1
-!s100 hi[LjAINGWYLmz]YeCYKJ0
-IjH3P_2[FeILcVNkO9I[;A0
+!s100 h?34@Vf:kPzmb<;eRoUO61
+I0CSWWPko>DF:0HmjlR_Lo1
 R3
 !s105 processor_sv_unit
 S1
 R0
-w1680731755
+w1683749863
 8../processor/processor.sv
 F../processor/processor.sv
 L0 5

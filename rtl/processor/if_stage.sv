@@ -41,7 +41,7 @@ assign PC_plus_4 = PC_reg + 4;
 assign next_PC = (ex_take_branch_out) ? ex_target_PC_out : PC_plus_4;
 
 // stall PC
-assign PC_enable = if_valid_inst_out | ex_take_branch_out;
+assign PC_enable = !stall_due_to_RAW; //////////////		NEW			/////////////////
 
 // Pass PC down pipeline w/instruction
 assign if_PC_out = PC_reg;
@@ -51,16 +51,16 @@ assign if_NPC_out = PC_plus_4;
 always_ff @(posedge clk) begin
 	if(rst)
 		PC_reg <= 0;       // initial PC value is 0
-	else if(PC_enable && !stall_due_to_RAW)					//////////////		NEW			/////////////////
+	else if(PC_enable )					//////////////		NEW			/////////////////
 		PC_reg <= next_PC; // transition to next PC
 end 
 
 
-always_ff @(posedge clk) begin
-	if (rst)
-		if_valid_inst_out <= 1; 
-	else
-		if_valid_inst_out <= mem_wb_valid_inst;
-end
-
+// always_ff @(posedge clk) begin
+// 	if (rst)
+// 		if_valid_inst_out <= 1; 
+// 	else
+// 		if_valid_inst_out <= mem_wb_valid_inst;			//////////////		NEW			/////////////////
+// end
+assign if_valid_inst_out = 1;
 endmodule  // module if_stage
